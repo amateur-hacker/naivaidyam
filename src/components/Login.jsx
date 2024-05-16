@@ -1,10 +1,11 @@
+import { forwardRef } from "react";
 import { useForm } from "react-hook-form";
 import { IoClose } from "react-icons/io5";
-import { AwesomeButton, AwesomeButtonProgress } from "react-awesome-button";
+import { AwesomeButton } from "react-awesome-button";
 import "react-awesome-button/dist/styles.css";
 import "animate.css";
 import { toast } from "react-toastify";
-import axios from "axios";
+import signinAxiosInstance from "../utils/signinAxiosInstance";
 
 const Login = ({ onClose, onSignupClick }) => {
   const handleClose = () => {
@@ -24,22 +25,21 @@ const Login = ({ onClose, onSignupClick }) => {
 
   const handleLogin = async (formData) => {
     try {
-      const response = await axios.post("/api/v1/auth/login", formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
-
+      const response = await signinAxiosInstance.post("/login", formData);
       const data = response.data;
       if (response.status === 200 && data.success) {
         toast.success("Redirecting");
-        // onClose();
+        onClose();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      if (error.response && error.response.status === 400) {
+        const { data } = error.response;
+        toast.error(data.message);
+      } else {
+        toast.error("Internal Server Error");
+      }
     }
   };
 
@@ -63,7 +63,6 @@ const Login = ({ onClose, onSignupClick }) => {
                   Username
                 </label>
                 <input
-                  id="username"
                   type="text"
                   autoComplete="off"
                   spellCheck={false}
@@ -96,7 +95,6 @@ const Login = ({ onClose, onSignupClick }) => {
                   Password
                 </label>
                 <input
-                  id="password"
                   type="password"
                   autoComplete="off"
                   {...register("password", {
@@ -123,11 +121,9 @@ const Login = ({ onClose, onSignupClick }) => {
           <div className="flex flex-col space-y-2">
             <AwesomeButton
               type="primary"
-              element={({ children, style, className }) => (
-                <button style={style} className={className} type="submit">
-                  {children}
-                </button>
-              )}
+              element={forwardRef((props, ref) => (
+                <button ref={ref} {...props} type="submit" />
+              ))}
             >
               {isSubmitting ? "PROCESSING" : "LOGIN"}
             </AwesomeButton>
@@ -137,15 +133,14 @@ const Login = ({ onClose, onSignupClick }) => {
 
             <AwesomeButton
               type="secondary"
-              element={({ children, style, className }) => (
+              element={forwardRef((props, ref) => (
                 <button
-                  style={style}
+                  ref={ref}
+                  {...props}
+                  type="button"
                   onClick={onSignupClick}
-                  className={className}
-                >
-                  {children}
-                </button>
-              )}
+                />
+              ))}
             >
               SIGNUP
             </AwesomeButton>

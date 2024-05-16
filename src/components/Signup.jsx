@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { forwardRef } from "react";
 import { useForm } from "react-hook-form";
 import { IoClose } from "react-icons/io5";
-import { AwesomeButton, AwesomeButtonProgress } from "react-awesome-button";
+import { AwesomeButton } from "react-awesome-button";
 import "react-awesome-button/dist/styles.css";
 import "animate.css";
 import { toast } from "react-toastify";
-import axios from "axios";
+import signinAxiosInstance from "../utils/signinAxiosInstance";
 
 const Signup = ({ onClose, onLoginClick }) => {
-  const [data, setData] = useState({});
   const handleClose = () => {
     document
       .querySelector(".signup-form")
@@ -26,14 +25,9 @@ const Signup = ({ onClose, onLoginClick }) => {
 
   const handleSignup = async (formData) => {
     try {
-      const response = await axios.post("/api/v1/auth/signup", formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      const response = await signinAxiosInstance.post("/signup", formData);
 
-      const data = response.data;
+      const data = await response.data;
       if (response.ok && data.success) {
         toast.success("Signup successfully");
         onLoginClick();
@@ -41,7 +35,12 @@ const Signup = ({ onClose, onLoginClick }) => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      if (error.response && error.response.status === 400) {
+        const { data } = error.response;
+        toast.error(data.message);
+      } else {
+        toast.error("Internal Server Error");
+      }
     }
   };
 
@@ -164,11 +163,9 @@ const Signup = ({ onClose, onLoginClick }) => {
           <div className="flex flex-col space-y-2">
             <AwesomeButton
               type="primary"
-              element={({ children, style, className }) => (
-                <button style={style} className={className} type="submit">
-                  {children}
-                </button>
-              )}
+              element={forwardRef((props, ref) => (
+                <button ref={ref} {...props} type="submit" />
+              ))}
             >
               {isSubmitting ? "PROCESSING" : "SIGNUP"}
             </AwesomeButton>
@@ -178,15 +175,14 @@ const Signup = ({ onClose, onLoginClick }) => {
 
             <AwesomeButton
               type="secondary"
-              element={({ children, style, className }) => (
+              element={forwardRef((props, ref) => (
                 <button
-                  style={style}
+                  ref={ref}
+                  {...props}
+                  type="button"
                   onClick={onLoginClick}
-                  className={className}
-                >
-                  {children}
-                </button>
-              )}
+                />
+              ))}
             >
               LOGIN
             </AwesomeButton>
@@ -196,5 +192,4 @@ const Signup = ({ onClose, onLoginClick }) => {
     </div>
   );
 };
-
 export default Signup;
